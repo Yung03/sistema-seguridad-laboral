@@ -1,0 +1,52 @@
+name: Sistema Seguridad Laboral
+
+on:
+  # Ejecutar manualmente
+  workflow_dispatch:
+  
+  # Ejecutar automáticamente el primer día de cada mes a las 9:00 AM
+  schedule:
+    - cron: '0 9 1 * *'
+  
+  # Ejecutar cuando se haga push a main
+  push:
+    branches: [ main ]
+  
+  # Ejecutar en pull requests
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  registrar-datos:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+    
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Ejecutar sistema de seguridad
+      env:
+        GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        SHEET_ID: ${{ secrets.SHEET_ID }}
+      run: |
+        python main.py
+    
+    - name: Notificar resultado
+      if: always()
+      run: |
+        if [ $? -eq 0 ]; then
+          echo "✅ Datos registrados exitosamente"
+        else
+          echo "❌ Error al registrar datos"
+          exit 1
+        fi
